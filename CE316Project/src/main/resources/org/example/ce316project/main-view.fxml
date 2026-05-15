@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.geometry.Insets?>
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.example.ce316project.MainController"
+            prefHeight="600.0" prefWidth="900.0">
+
+    <top>
+        <MenuBar BorderPane.alignment="CENTER">
+            <menus>
+                <Menu mnemonicParsing="false" text="file">
+                    <items>
+                        <MenuItem mnemonicParsing="false" onAction="#handleNewProject" text="New Project..." />
+                        <MenuItem mnemonicParsing="false" onAction="#handleOpenProject" text="Open Project..." />
+                        <MenuItem mnemonicParsing="false" onAction="#handleSaveProject" text="Save Project" />
+                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <MenuItem mnemonicParsing="false" onAction="#handleExit" text="Exit" />
+                    </items>
+                </Menu>
+                <Menu mnemonicParsing="false" text="org.example.ce316project.Configuration">
+                    <items>
+                        <MenuItem mnemonicParsing="false" onAction="#handleManageConfigs" text="Manage Configurations..." />
+                        <MenuItem mnemonicParsing="false" onAction="#handleImportConfig" text="Import..." />
+                        <MenuItem mnemonicParsing="false" onAction="#handleExportConfig" text="Export..." />
+                    </items>
+                </Menu>
+                <Menu mnemonicParsing="false" text="Help">
+                    <items>
+                        <MenuItem mnemonicParsing="false" onAction="#handleOpenManual" text="Manual" />
+                    </items>
+                </Menu>
+            </menus>
+        </MenuBar>
+    </top>
+
+    <center>
+        <SplitPane dividerPositions="0.25" prefHeight="160.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+            <items>
+                <VBox prefHeight="200.0" prefWidth="100.0" spacing="5.0">
+                    <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                    </padding>
+                    <Label text="Student Submissions" style="-fx-font-weight: bold;"/>
+                    <ListView fx:id="studentListView" VBox.vgrow="ALWAYS" />
+                </VBox>
+
+                <SplitPane dividerPositions="0.3" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0">
+                    <items>
+                        <VBox spacing="10.0">
+                            <padding>
+                                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                            </padding>
+                            <HBox spacing="10.0" alignment="CENTER_LEFT">
+                                <Label text="Active org.example.ce316project.Configuration:" />
+                                <ComboBox fx:id="configComboBox" prefWidth="200.0" />
+                            </HBox>
+                            <HBox spacing="10.0" alignment="CENTER_LEFT">
+                                <Label text="Target Directory:" />
+                                <TextField fx:id="directoryTextField" HBox.hgrow="ALWAYS" editable="false"/>
+                                <Button mnemonicParsing="false" onAction="#handleBrowseDirectory" text="Browse..." />
+                            </HBox>
+                            <Button mnemonicParsing="false" onAction="#handleRunAssignments" text="Run Assignments" style="-fx-font-weight: bold; -fx-base: #4CAF50;" />
+                        </VBox>
+
+                        <VBox spacing="5.0">
+                            <padding>
+                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                            </padding>
+                            <Label text="Execution Reports" style="-fx-font-weight: bold;"/>
+                            <TableView fx:id="resultsTableView" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="studentIdCol" prefWidth="150.0" text="Student ID" />
+                                    <TableColumn fx:id="statusCol" prefWidth="100.0" text="Status" />
+                                    <TableColumn fx:id="detailsCol" prefWidth="300.0" text="Details / Errors" />
+                                </columns>
+                            </TableView>
+                        </VBox>
+                    </items>
+                </SplitPane>
+            </items>
+        </SplitPane>
+    </center>
+
+</BorderPane>
