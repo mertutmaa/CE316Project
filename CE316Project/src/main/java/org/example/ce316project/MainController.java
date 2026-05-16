@@ -2,6 +2,7 @@ package org.example.ce316project;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
 import java.nio.file.Path;
 
@@ -61,6 +62,18 @@ public class MainController {
 
     @FXML
     void handleManageConfigs(ActionEvent event) {
+
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("config-manager.fxml"));
+            javafx.scene.Parent root = fxmlLoader.load();
+            javafx.stage.Stage stage = new javafx.stage.Stage();
+            stage.setTitle("Manage Configurations");
+            stage.setScene(new javafx.scene.Scene(root));
+            stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            stage.showAndWait();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         manager.createConfiguration("Test Config", Path.of("/usr/bin/gcc"), "-o main", "./main", Path.of("out.txt"));
 

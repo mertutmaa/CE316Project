@@ -24,7 +24,7 @@
                         <MenuItem mnemonicParsing="false" onAction="#handleExit" text="Exit" />
                     </items>
                 </Menu>
-                <Menu mnemonicParsing="false" text="org.example.ce316project.Configuration">
+                <Menu mnemonicParsing="false" text="Configuration">
                     <items>
                         <MenuItem mnemonicParsing="false" onAction="#handleManageConfigs" text="Manage Configurations..." />
                         <MenuItem mnemonicParsing="false" onAction="#handleImportConfig" text="Import..." />
@@ -58,7 +58,7 @@
                                 <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                             </padding>
                             <HBox spacing="10.0" alignment="CENTER_LEFT">
-                                <Label text="Active org.example.ce316project.Configuration:" />
+                                <Label text="Active Configuration:" />
                                 <ComboBox fx:id="configComboBox" prefWidth="200.0" />
                             </HBox>
                             <HBox spacing="10.0" alignment="CENTER_LEFT">
