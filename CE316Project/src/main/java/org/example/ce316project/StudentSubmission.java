@@ -4,42 +4,42 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * StudentSubmission — Bir öğrencinin ödev gönderisini temsil eder.
+ * StudentSubmission — Represents a student's assignment submission.
  *
- * Değerlendirme aşamaları:
- *   Gönderildi → ZIP Çıkartıldı → Derlendi → Çalıştı → Testi Geçti
+ * Evaluation stages:
+ *   Submitted → ZIP Extracted → Compiled → Executed → Passed Testing
  */
 public class StudentSubmission {
 
     // ─────────────────────────────────────────────
-    // Alanlar
+    // Fields
     // ─────────────────────────────────────────────
 
-    /** Öğrenci kimliği — ZIP dosya adından alınır (ör: "20210001"). Değiştirilemez. */
+    /** Student identifier — parsed from the ZIP filename (e.g., "20210001"). Immutable. */
     private final String studentID;
 
-    /** Kaynak kodun çıkartıldığı dizin yolu. */
+    /** Directory path where the source code has been extracted. */
     private String extractedSourceDirectory;
 
-    /** Hangi konfigürasyonla değerlendirildi. */
+    /** Name of the configuration profile used for evaluation. */
     private String usedConfigName;
 
-    /** Derleme aşaması başarılı mı? */
+    /** Indicates whether the compilation stage was successful. */
     private boolean isCompiled;
 
-    /** Çalıştırma aşaması başarılı mı? */
+    /** Indicates whether the execution stage was successful. */
     private boolean ranSuccessfully;
 
-    /** Beklenen çıktıyla eşleşti mi? */
+    /** Indicates whether the program output matched the expected output. */
     private boolean passedTesting;
 
-    /** Değerlendirme raporu — hata mesajları veya PASSED/FAILED detayı. */
+    /** Evaluation report — contains error messages or detailed PASSED/FAILED data. */
     private String reportDetails;
 
-    /** Gönderinin oluşturulma zamanı. */
+    /** Timestamp recording when the submission record was instantiated. */
     private final LocalDateTime submittedAt;
 
-    /** Değerlendirmenin tamamlandığı zaman. */
+    /** Timestamp recording when the evaluation pipeline was completed. */
     private LocalDateTime evaluatedAt;
 
     // ─────────────────────────────────────────────
@@ -47,8 +47,8 @@ public class StudentSubmission {
     // ─────────────────────────────────────────────
 
     /**
-     * @param id   Öğrenci kimliği (ör: "20210001")
-     * @param path ZIP'in çıkartıldığı kaynak dizin yolu
+     * @param id   Student identifier (e.g., "20210001")
+     * @param path Source directory path where the ZIP file was extracted
      */
     public StudentSubmission(String id, String path) {
         this.studentID                = id;
@@ -64,7 +64,7 @@ public class StudentSubmission {
     }
 
     // ─────────────────────────────────────────────
-    // Setter'lar
+    // Setters
     // ─────────────────────────────────────────────
 
     public void setExtractedSourceDirectory(String extractedSourceDirectory) {
@@ -92,14 +92,14 @@ public class StudentSubmission {
     }
 
     /**
-     * Değerlendirme tamamlandığında çağrılır, zamanı kaydeder.
+     * Invoked when the evaluation process completes to log the finish timestamp.
      */
     public void markEvaluated() {
         this.evaluatedAt = LocalDateTime.now();
     }
 
     // ─────────────────────────────────────────────
-    // Getter'lar
+    // Getters
     // ─────────────────────────────────────────────
 
     public String getStudentID() {
@@ -115,17 +115,17 @@ public class StudentSubmission {
     }
 
     /**
-     * Java boolean getter standardı: is + FieldName (büyük harf).
-     * JavaFX PropertyValueFactory ve diğer kütüphanelerle uyumlu.
+     * Standard Java boolean getter: is + FieldName (CamelCase).
+     * Fully compliant with JavaFX PropertyValueFactory and other reflection-based libraries.
      */
     public boolean isCompiled() {
         return isCompiled;
     }
 
     /**
-     * JavaFX TableView PropertyValueFactory için gerekli:
-     * "isCompiled" property'si → isCompiled() metodunu arar.
-     * Geriye dönük uyumluluk için getIsCompiled() de korundu.
+     * Required for JavaFX TableView PropertyValueFactory mapping:
+     * The property "isCompiled" looks for the isCompiled() method pattern first.
+     * getIsCompiled() is maintained here to guarantee backward compatibility.
      */
     public boolean getIsCompiled() {
         return isCompiled;
@@ -160,12 +160,12 @@ public class StudentSubmission {
     }
 
     // ─────────────────────────────────────────────
-    // Yardımcı Metotlar
+    // Helper Methods
     // ─────────────────────────────────────────────
 
     /**
-     * Değerlendirme durumunu kısa bir string olarak döndürür.
-     * Konsol özeti ve debug için kullanışlı.
+     * Returns a short string summary of the evaluation status.
+     * Convenient for log console dumps and testing debug points.
      */
     public String getStatusSummary() {
         if (!isCompiled)      return "COMPILE_ERROR";
@@ -175,7 +175,7 @@ public class StudentSubmission {
     }
 
     /**
-     * Zaman damgasını okunabilir formatta döndürür.
+     * Converts the internal submission timestamp into a human-readable format.
      */
     public String getFormattedSubmittedAt() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");

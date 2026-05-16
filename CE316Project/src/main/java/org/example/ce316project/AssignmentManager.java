@@ -6,25 +6,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * AssignmentManager — merkezi yönetici sınıf.
+ * AssignmentManager — Central manager class.
  *
- * Sorumluluğu:
- *  - SQLite veritabanı bağlantısını kurmak ve tabloları oluşturmak
- *  - Configuration nesnelerini oluşturmak, kaydetmek, yüklemek
- *  - Project nesnelerini oluşturmak, kaydetmek, yüklemek
- *  - RAM içi listeleri veritabanıyla senkronize tutmak
+ * Responsibility:
+ *  - Establishing the SQLite database connection and creating tables
+ *  - Creating, saving, and loading Configuration objects
+ *  - Creating, saving, and loading Project objects
+ *  - Keeping in-memory lists synchronized with the database
  */
 public class AssignmentManager {
 
     // ─────────────────────────────────────────────
-    // Sabitler
+    // Constants
     // ─────────────────────────────────────────────
 
     /** Veritabanı dosyasının yolu. Uygulama dizininde oluşturulur. */
     private static final String DB_URL = "jdbc:sqlite:assignment_manager.db";
 
     // ─────────────────────────────────────────────
-    // Alanlar
+    // Fields
     // ─────────────────────────────────────────────
 
     private final List<Project> projects;
@@ -44,25 +44,25 @@ public class AssignmentManager {
     }
 
     // ─────────────────────────────────────────────
-    // Veritabanı Kurulumu
+    // Database Setup
     // ─────────────────────────────────────────────
 
     /**
-     * SQLite bağlantısını açar ve gerekli tabloları oluşturur.
-     * Tablolar zaten varsa dokunulmaz (IF NOT EXISTS).
+     * Opens the SQLite connection and creates the required tables.
+     * If the tables already exist, they are left untouched (IF NOT EXISTS).
      */
     private void initDatabase() {
         try {
             connection = DriverManager.getConnection(DB_URL);
-            System.out.println("[DB] SQLite bağlantısı kuruldu: " + DB_URL);
+            System.out.println("[DB] SQLite connection established: " + DB_URL);
             createTables();
         } catch (SQLException e) {
-            System.out.println("[DB] Bağlantı hatası: " + e.getMessage());
+            System.out.println("[DB] Connection error: " + e.getMessage());
         }
     }
 
     /**
-     * Configurations ve Projects tablolarını oluşturur.
+     * Creates the configurations and projects tables.
      */
     private void createTables() throws SQLException {
         String createConfigurations = """
@@ -89,38 +89,38 @@ public class AssignmentManager {
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(createConfigurations);
             stmt.execute(createProjects);
-            System.out.println("[DB] Tablolar hazır.");
+            System.out.println("[DB] Tables are ready.");
         }
     }
 
-    // ─────────────────────────────────────────────
-    // Configuration — Oluşturma & Kaydetme
+   // ─────────────────────────────────────────────
+    // Configuration — Create & Save
     // ─────────────────────────────────────────────
 
     /**
-     * Yeni bir Configuration oluşturur, veritabanına kaydeder ve listeye ekler.
+     * Creates a new Configuration, saves it to the database, and adds it to the list.
      *
-     * @param name       Konfigürasyon adı (benzersiz olmalı)
-     * @param compiler   Derleyici yolu (ör: /usr/bin/gcc) — null olabilir
-     * @param cArgs      Derleme argümanları (ör: -o main main.c) — null olabilir
-     * @param execCmd    Çalıştırma komutu (ör: ./main) — zorunlu
-     * @param output     Beklenen çıktı dosyası yolu — null olabilir
-     * @return Oluşturulan Configuration nesnesi, hata durumunda null
+     * @param name       Configuration name (must be unique)
+     * @param compiler   Compiler path (e.g., /usr/bin/gcc) — can be null
+     * @param cArgs      Compilation arguments (e.g., -o main main.c) — can be null
+     * @param execCmd    Execution command (e.g., ./main) — mandatory
+     * @param output     Expected output file path — can be null
+     * @return The created Configuration object, or null in case of error
      */
     public Configuration createConfiguration(String name, Path compiler,
                                              String cArgs, String execCmd, Path output) {
         if (name == null || name.isBlank()) {
-            System.out.println("[Manager] Hata: Konfigürasyon adı boş olamaz.");
+            System.out.println("[Manager] Error: Configuration name cannot be empty.");
             return null;
         }
         if (execCmd == null || execCmd.isBlank()) {
-            System.out.println("[Manager] Hata: Çalıştırma komutu boş olamaz.");
+            System.out.println("[Manager] Error: Execution command cannot be empty.");
             return null;
         }
 
-        // Aynı isimde var mı kontrolü
+        // Check if a configuration with the same name already exists
         if (findConfigurationByName(name) != null) {
-            System.out.println("[Manager] Hata: '" + name + "' adında bir konfigürasyon zaten mevcut.");
+            System.out.println("[Manager] Error: A configuration named '" + name + "' already exists.");
             return null;
         }
 
@@ -139,9 +139,9 @@ public class AssignmentManager {
             pstmt.setString(4, execCmd);
             pstmt.setString(5, output != null ? output.toString() : null);
             pstmt.executeUpdate();
-            System.out.println("[Manager] Konfigürasyon kaydedildi: " + name);
+            System.out.println("[Manager] Configuration saved: " + name);
         } catch (SQLException e) {
-            System.out.println("[Manager] Konfigürasyon kaydedilemedi: " + e.getMessage());
+            System.out.println("[Manager] Configuration could not be saved: " + e.getMessage());
             return null;
         }
 
@@ -150,44 +150,44 @@ public class AssignmentManager {
     }
 
     /**
-     * Konfigürasyonu JSON/XML dosyasından içe aktarır.
-     * TODO: JSON/XML parse implementasyonu eklenecek.
+     * Imports configuration from a JSON/XML file.
+     * TODO: JSON/XML parsing implementation to be added.
      *
-     * @param filePath İçe aktarılacak dosyanın yolu
+     * @param filePath Path of the file to be imported
      */
     public void importConfiguration(String filePath) {
         if (filePath == null || filePath.isBlank()) {
-            System.out.println("[Manager] Hata: Dosya yolu boş olamaz.");
+            System.out.println("[Manager] Error: File path cannot be empty.");
             return;
         }
-        System.out.println("[Manager] İçe aktarma henüz implement edilmedi: " + filePath);
-        // TODO: JSON/XML parse edip createConfiguration() çağır
+        System.out.println("[Manager] Import not yet implemented: " + filePath);
+        // TODO: Parse JSON/XML and call createConfiguration()
     }
 
     // ─────────────────────────────────────────────
-    // Project — Oluşturma & Kaydetme
+    // Project — Create & Save
     // ─────────────────────────────────────────────
 
     /**
-     * Yeni bir Project oluşturur, veritabanına kaydeder ve listeye ekler.
+     * Creates a new Project, saves it to the database, and adds it to the list.
      *
-     * @param name   Proje adı (benzersiz olmalı)
-     * @param config Bu projeye bağlı Configuration — null olamaz
-     * @return Oluşturulan Project nesnesi, hata durumunda null
+     * @param name   Project name (must be unique)
+     * @param config The Configuration linked to this project — cannot be null
+     * @return The created Project object, or null in case of error
      */
     public Project createProject(String name, Configuration config) {
         if (name == null || name.isBlank()) {
-            System.out.println("[Manager] Hata: Proje adı boş olamaz.");
+            System.out.println("[Manager] Error: Project name cannot be empty.");
             return null;
         }
         if (config == null) {
-            System.out.println("[Manager] Hata: Geçerli bir konfigürasyon olmadan proje oluşturulamaz.");
+            System.out.println("[Manager] Error: Cannot create a project without a valid configuration.");
             return null;
         }
 
-        // Aynı isimde proje var mı kontrolü
+        // Check if a project with the same name already exists
         if (findProjectByName(name) != null) {
-            System.out.println("[Manager] Hata: '" + name + "' adında bir proje zaten mevcut.");
+            System.out.println("[Manager] Error: A project named '" + name + "' already exists.");
             return null;
         }
 
@@ -206,9 +206,9 @@ public class AssignmentManager {
                     ? newProject.getSubmissionZIPsDirectory().toString()
                     : null);
             pstmt.executeUpdate();
-            System.out.println("[Manager] Proje veritabanına kaydedildi: " + name);
+            System.out.println("[Manager] Project saved to database: " + name);
         } catch (SQLException e) {
-            System.out.println("[Manager] Proje kaydedilemedi: " + e.getMessage());
+            System.out.println("[Manager] Project could not be saved: " + e.getMessage());
             return null;
         }
 
@@ -217,10 +217,10 @@ public class AssignmentManager {
     }
 
     /**
-     * Var olan bir projenin ZIP dizinini veritabanında günceller.
+     * Updates the ZIP directory of an existing project in the database.
      *
-     * @param project       Güncellenecek proje
-     * @param zipDirectory  Yeni ZIP dizini
+     * @param project       The project to be updated
+     * @param zipDirectory  The new ZIP directory
      */
     public void updateProjectZipDirectory(Project project, Path zipDirectory) {
         if (project == null || zipDirectory == null) return;
@@ -232,20 +232,20 @@ public class AssignmentManager {
             pstmt.setString(1, zipDirectory.toString());
             pstmt.setString(2, project.getName());
             pstmt.executeUpdate();
-            System.out.println("[Manager] Proje ZIP dizini güncellendi: " + project.getName());
+            System.out.println("[Manager] Project ZIP directory updated: " + project.getName());
         } catch (SQLException e) {
-            System.out.println("[Manager] ZIP dizini güncellenemedi: " + e.getMessage());
+            System.out.println("[Manager] ZIP directory could not be updated: " + e.getMessage());
         }
     }
 
     // ─────────────────────────────────────────────
-    // Yükleme — Veritabanından RAM'e
+    // Loading — From Database to RAM
     // ─────────────────────────────────────────────
 
     /**
-     * Uygulama başlarken tüm kayıtları veritabanından yükler.
-     * Önce konfigürasyonlar, sonra projeler yüklenir
-     * (projeler konfigürasyona bağımlı olduğu için sıra önemli).
+     * Loads all records from the database upon application startup.
+     * Configurations are loaded first, followed by projects
+     * (the order is important since projects depend on configurations).
      */
     private void loadAllFromDatabase() {
         loadConfigurations();
@@ -253,7 +253,7 @@ public class AssignmentManager {
     }
 
     /**
-     * Tüm konfigürasyonları veritabanından okuyup listeye ekler.
+     * Reads all configuration from the database and adds them to the list
      */
     private void loadConfigurations() {
         String sql = "SELECT name, compiler_path, compile_args, exec_cmd, output_path FROM configurations";
@@ -275,16 +275,16 @@ public class AssignmentManager {
                 configurations.add(config);
             }
 
-            System.out.println("[DB] " + configurations.size() + " konfigürasyon yüklendi.");
+            System.out.println("[DB] " + configurations.size() + " configurations loaded.");
 
         } catch (SQLException e) {
-            System.out.println("[DB] Konfigürasyonlar yüklenemedi: " + e.getMessage());
+            System.out.println("[DB] Configurations could not be loaded:" + e.getMessage());
         }
     }
 
     /**
-     * Tüm projeleri veritabanından okuyup listeye ekler.
-     * Her projenin konfigürasyonunu RAM listesinden bulur.
+     * Reads all projects from the database and adds them to the list.
+     * Finds the configuration for each project from the in-memory list.
      */
     private void loadProjects() {
         String sql = "SELECT name, config_name, zip_directory FROM projects";
@@ -297,11 +297,11 @@ public class AssignmentManager {
                 String configName = rs.getString("config_name");
                 String zipDir     = rs.getString("zip_directory");
 
-                // Konfigürasyonu RAM listesinden bul
+                // Find the configuration from the in-memory list
                 Configuration config = findConfigurationByName(configName);
                 if (config == null) {
-                    System.out.println("[DB] Uyarı: '" + name
-                            + "' projesinin konfigürasyonu bulunamadı: " + configName);
+                    System.out.println("[DB] Warning: Configuration not found for project '" + name
+                            + "': " + configName);
                     continue;
                 }
 
@@ -313,31 +313,31 @@ public class AssignmentManager {
                 projects.add(project);
             }
 
-            System.out.println("[DB] " + projects.size() + " proje yüklendi.");
+            System.out.println("[DB] " + projects.size() + " projects loaded.");
 
         } catch (SQLException e) {
-            System.out.println("[DB] Projeler yüklenemedi: " + e.getMessage());
+            System.out.println("[DB] Projects could not be loaded: " + e.getMessage());
         }
     }
 
     /**
-     * Belirli bir projeyi dosya yolundan veya adından yükler.
-     * Önce RAM listesinde arar, bulamazsa veritabanına bakar.
+     * Loads a specific project by its name or file path.
+     * Searches the in-memory list first, then falls back to the database.
      *
-     * @param nameOrPath Proje adı
-     * @return Bulunan Project nesnesi, bulunamazsa null
+     * @param nameOrPath Project name
+     * @return The found Project object, or null if not found
      */
     public Project loadProject(String nameOrPath) {
         if (nameOrPath == null || nameOrPath.isBlank()) return null;
 
-        // Önce RAM'de ara
+        // Search in RAM first
         Project found = findProjectByName(nameOrPath);
         if (found != null) {
-            System.out.println("[Manager] Proje RAM'den yüklendi: " + nameOrPath);
+            System.out.println("[Manager] Project loaded from RAM: " + nameOrPath);
             return found;
         }
 
-        // Veritabanında ara
+        // Search in database
         String sql = "SELECT name, config_name, zip_directory FROM projects WHERE name = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, nameOrPath);
@@ -349,7 +349,7 @@ public class AssignmentManager {
 
                 Configuration config = findConfigurationByName(configName);
                 if (config == null) {
-                    System.out.println("[Manager] Konfigürasyon bulunamadı: " + configName);
+                    System.out.println("[Manager] Configuration not found: " + configName);
                     return null;
                 }
 
@@ -359,28 +359,28 @@ public class AssignmentManager {
                 }
 
                 projects.add(project);
-                System.out.println("[Manager] Proje veritabanından yüklendi: " + nameOrPath);
+                System.out.println("[Manager] Project loaded from database: " + nameOrPath);
                 return project;
             }
 
         } catch (SQLException e) {
-            System.out.println("[Manager] Proje yüklenemedi: " + e.getMessage());
+            System.out.println("[Manager] Project could not be loaded: " + e.getMessage());
         }
 
-        System.out.println("[Manager] Proje bulunamadı: " + nameOrPath);
+        System.out.println("[Manager] Project not found: " + nameOrPath);
         return null;
     }
 
     // ─────────────────────────────────────────────
-    // Silme İşlemleri
+    // Deletion & Update Operations
     // ─────────────────────────────────────────────
 
+    
     /**
-     * Bir konfigürasyonu hem RAM listesinden hem de veritabanından siler.
+     * Deletes a configuration from both the in-memory list and the database.
      *
-     * @param name Silinecek konfigürasyonun adı
+     * @param name Name of the configuration to delete
      */
-
 
 
 
@@ -421,19 +421,19 @@ public class AssignmentManager {
             pstmt.setString(1, name);
             int affected = pstmt.executeUpdate();
             if (affected > 0) {
-                System.out.println("[Manager] Konfigürasyon silindi: " + name);
+                System.out.println("[Manager] Configuration deleted: " + name);
             } else {
-                System.out.println("[Manager] Silinecek konfigürasyon bulunamadı: " + name);
+                System.out.println("[Manager] Configuration to delete not found: " + name);
             }
         } catch (SQLException e) {
-            System.out.println("[Manager] Konfigürasyon silinemedi: " + e.getMessage());
+            System.out.println("[Manager] Configuration could not be deleted: " + e.getMessage());
         }
     }
 
     /**
-     * Bir projeyi hem RAM listesinden hem de veritabanından siler.
+     * Deletes a project from both the in-memory list and the database.
      *
-     * @param name Silinecek projenin adı
+     * @param name Name of the project to delete
      */
     public void deleteProject(String name) {
         projects.removeIf(p -> p.getName().equals(name));
@@ -443,21 +443,21 @@ public class AssignmentManager {
             pstmt.setString(1, name);
             int affected = pstmt.executeUpdate();
             if (affected > 0) {
-                System.out.println("[Manager] Proje silindi: " + name);
+                System.out.println("[Manager] Project deleted: " + name);
             } else {
-                System.out.println("[Manager] Silinecek proje bulunamadı: " + name);
+                System.out.println("[Manager] Project to delete not found: " + name);
             }
         } catch (SQLException e) {
-            System.out.println("[Manager] Proje silinemedi: " + e.getMessage());
+            System.out.println("[Manager] Project could not be deleted: " + e.getMessage());
         }
     }
 
     // ─────────────────────────────────────────────
-    // Arama Yardımcıları
+    // Search Helpers
     // ─────────────────────────────────────────────
 
     /**
-     * RAM listesinde ada göre konfigürasyon arar.
+     * Searches for a configuration by name in the in-memory list.
      */
     public Configuration findConfigurationByName(String name) {
         return configurations.stream()
@@ -467,7 +467,7 @@ public class AssignmentManager {
     }
 
     /**
-     * RAM listesinde ada göre proje arar.
+     * Searches for a project by name in the in-memory list.
      */
     public Project findProjectByName(String name) {
         return projects.stream()
@@ -477,26 +477,26 @@ public class AssignmentManager {
     }
 
     // ─────────────────────────────────────────────
-    // Bağlantı Kapatma
+    // Closing Connection
     // ─────────────────────────────────────────────
 
     /**
-     * Uygulama kapanırken veritabanı bağlantısını kapatır.
-     * Bu metodu Stage.setOnCloseRequest() içinde çağırın.
+     * Closes the database connection when the application shuts down.
+     * Call this method inside Stage.setOnCloseRequest().
      */
     public void closeDatabase() {
         try {
             if (connection != null && !connection.isClosed()) {
                 connection.close();
-                System.out.println("[DB] Bağlantı kapatıldı.");
+                System.out.println("[DB] Connection closed.");
             }
         } catch (SQLException e) {
-            System.out.println("[DB] Bağlantı kapatılırken hata: " + e.getMessage());
+            System.out.println("[DB] Error while closing connection: " + e.getMessage());
         }
     }
 
     // ─────────────────────────────────────────────
-    // Getter'lar
+    // Getters
     // ─────────────────────────────────────────────
 
     public List<Project> getProjects() {

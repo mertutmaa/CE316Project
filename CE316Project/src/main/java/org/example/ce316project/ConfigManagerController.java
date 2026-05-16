@@ -10,19 +10,19 @@ import java.io.File;
 import java.nio.file.Path;
 
 /**
- * ConfigManagerController — Konfigürasyon yönetim ekranının controller'ı.
+ * ConfigManagerController — Controller for the configuration management screen.
  *
- * Görevleri:
- *  - Mevcut konfigürasyonları listeler
- *  - Yeni konfigürasyon oluşturur (AssignmentManager üzerinden kaydeder)
- *  - Seçili konfigürasyonu düzenler ve günceller
- *  - Seçili konfigürasyonu siler
- *  - Derleyici dosyasını FileChooser ile seçer
+ * Responsibilities:
+ *  - Lists existing configurations
+ *  - Creates a new configuration (saves it via AssignmentManager)
+ *  - Edits and updates the selected configuration
+ *  - Deletes the selected configuration
+ *  - Selects the compiler file using FileChooser
  */
 public class ConfigManagerController {
 
     // ─────────────────────────────────────────────
-    // FXML Bileşenleri
+    // FXML Components
     // ─────────────────────────────────────────────
 
     @FXML
@@ -44,17 +44,17 @@ public class ConfigManagerController {
     private TextField expectedOutputField;
 
     // ─────────────────────────────────────────────
-    // Bağımlılıklar
+    // Dependencies
     // ─────────────────────────────────────────────
 
-    /** MainController tarafından inject edilir. */
+    /** Injected by MainController. */
     private AssignmentManager manager;
 
-    /** Listeden seçili konfigürasyonun adı. null ise yeni kayıt modundayız. */
+    /** Name of the selected configuration from the list. If null, we are in create mode. */
     private String selectedConfigName = null;
 
     // ─────────────────────────────────────────────
-    // Başlatma
+    // Initialization
     // ─────────────────────────────────────────────
 
     public void setManager(AssignmentManager manager) {
@@ -74,7 +74,7 @@ public class ConfigManagerController {
     }
 
     // ─────────────────────────────────────────────
-    // Liste & Form Yönetimi
+    // List & Form Management
     // ─────────────────────────────────────────────
 
     private void refreshList() {
@@ -86,8 +86,8 @@ public class ConfigManagerController {
     }
 
     /**
-     * Seçili konfigürasyonun bilgilerini form alanlarına doldurur.
-     * Ad alanı kilitleniyor — ad değiştirilemez, diğer alanlar düzenlenebilir.
+     * Fills the form fields with the details of the selected configuration.
+     * The name field is locked — the name cannot be changed, while other fields can be edited.
      */
     private void populateForm(String configName) {
         if (manager == null) return;
@@ -116,7 +116,7 @@ public class ConfigManagerController {
     }
 
     /**
-     * Tüm form alanlarını temizler, yeni konfigürasyon girişine hazırlar.
+     * Clears all form fields to prepare for a new configuration input.
      */
     private void clearForm() {
         configListView.getSelectionModel().clearSelection();
@@ -130,7 +130,7 @@ public class ConfigManagerController {
     }
 
     // ─────────────────────────────────────────────
-    // Button Handler'ları
+    // Button Handlers
     // ─────────────────────────────────────────────
 
     @FXML
@@ -141,10 +141,10 @@ public class ConfigManagerController {
     @FXML
     void handleBrowseCompiler(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Derleyici Seç");
+        fileChooser.setTitle("Select Compiler");
         fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Çalıştırılabilir Dosyalar", "*", "*.exe"),
-                new FileChooser.ExtensionFilter("Tüm Dosyalar", "*.*")
+                new FileChooser.ExtensionFilter("Executable Files", "*", "*.exe"),
+                new FileChooser.ExtensionFilter("All Files", "*.*")
         );
 
         Stage stage = (Stage) compilerPathField.getScene().getWindow();
@@ -152,19 +152,19 @@ public class ConfigManagerController {
 
         if (selectedFile != null) {
             compilerPathField.setText(selectedFile.getAbsolutePath());
-            System.out.println("[Config] Derleyici seçildi: " + selectedFile.getAbsolutePath());
+            System.out.println("[Config] Compiler selected: " + selectedFile.getAbsolutePath());
         }
     }
 
     /**
-     * "Kaydet" butonu.
-     * selectedConfigName null ise → yeni kayıt
-     * selectedConfigName dolu ise  → güncelleme
+     * "Save" button handler.
+     * If selectedConfigName is null → new record
+     * If selectedConfigName is not null → update existing record
      */
     @FXML
     void handleSave(ActionEvent event) {
         if (manager == null) {
-            showAlert(Alert.AlertType.ERROR, "Hata", "Manager bağlı değil.");
+            showAlert(Alert.AlertType.ERROR, "Error", "Manager is not linked.");
             return;
         }
 
@@ -175,11 +175,11 @@ public class ConfigManagerController {
         String outputStr   = expectedOutputField.getText().trim();
 
         if (name.isEmpty()) {
-            showAlert(Alert.AlertType.WARNING, "Eksik Alan", "Konfigürasyon adı boş olamaz.");
+            showAlert(Alert.AlertType.WARNING, "Missing Field", "Configuration name cannot be empty.");
             return;
         }
         if (execCmd.isEmpty()) {
-            showAlert(Alert.AlertType.WARNING, "Eksik Alan", "Çalıştırma komutu boş olamaz.");
+            showAlert(Alert.AlertType.WARNING, "Missing Field", "Execution command cannot be empty.");
             return;
         }
 
@@ -188,33 +188,33 @@ public class ConfigManagerController {
         String args   = cArgs.isEmpty()       ? null : cArgs;
 
         if (selectedConfigName != null) {
-            // ── Güncelleme modu ──────────────────────
+            // ── Update Mode ──────────────────────
             Configuration updated = manager.updateConfiguration(
                     selectedConfigName, compiler, args, execCmd, output
             );
             if (updated != null) {
                 refreshList();
                 clearForm();
-                showAlert(Alert.AlertType.INFORMATION, "Güncellendi",
-                        "Konfigürasyon güncellendi: " + selectedConfigName);
-                System.out.println("[Config] Güncellendi: " + selectedConfigName);
+                showAlert(Alert.AlertType.INFORMATION, "Updated",
+                        "Configuration updated: " + selectedConfigName);
+                System.out.println("[Config] Updated: " + selectedConfigName);
             } else {
-                showAlert(Alert.AlertType.ERROR, "Hata", "Güncelleme başarısız.");
+                showAlert(Alert.AlertType.ERROR, "Error", "Update failed.");
             }
         } else {
-            // ── Yeni kayıt modu ──────────────────────
+            // ── Create Mode ──────────────────────
             Configuration saved = manager.createConfiguration(
                     name, compiler, args, execCmd, output
             );
             if (saved != null) {
                 refreshList();
                 clearForm();
-                showAlert(Alert.AlertType.INFORMATION, "Kaydedildi",
-                        "Konfigürasyon kaydedildi: " + name);
-                System.out.println("[Config] Kaydedildi: " + name);
+                showAlert(Alert.AlertType.INFORMATION, "Saved",
+                        "Configuration saved: " + name);
+                System.out.println("[Config] Saved: " + name);
             } else {
-                showAlert(Alert.AlertType.ERROR, "Hata",
-                        "Kaydedilemedi. Aynı isimde bir kayıt mevcut olabilir.");
+                showAlert(Alert.AlertType.ERROR, "Error",
+                        "Could not save. A record with the same name might already exist.");
             }
         }
     }
@@ -224,14 +224,14 @@ public class ConfigManagerController {
         String selected = configListView.getSelectionModel().getSelectedItem();
 
         if (selected == null) {
-            showAlert(Alert.AlertType.WARNING, "Seçim Yok",
-                    "Lütfen silmek için bir konfigürasyon seçin.");
+            showAlert(Alert.AlertType.WARNING, "No Selection",
+                    "Please select a configuration to delete.");
             return;
         }
 
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Silme Onayı");
-        confirm.setHeaderText("Bu konfigürasyonu silmek istediğinizden emin misiniz?");
+        confirm.setTitle("Delete Confirmation");
+        confirm.setHeaderText("Are you sure you want to delete this configuration?");
         confirm.setContentText(selected);
 
         confirm.showAndWait().ifPresent(response -> {
@@ -239,15 +239,15 @@ public class ConfigManagerController {
                 manager.deleteConfiguration(selected);
                 refreshList();
                 clearForm();
-                System.out.println("[Config] Silindi: " + selected);
-                showAlert(Alert.AlertType.INFORMATION, "Silindi",
-                        "Konfigürasyon silindi: " + selected);
+                System.out.println("[Config] Deleted: " + selected);
+                showAlert(Alert.AlertType.INFORMATION, "Deleted",
+                        "Configuration deleted: " + selected);
             }
         });
     }
 
     // ─────────────────────────────────────────────
-    // Yardımcı Metotlar
+    // Helper Methods
     // ─────────────────────────────────────────────
 
     private void showAlert(Alert.AlertType type, String title, String message) {
