@@ -11,11 +11,17 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 public class Configuration {
-    private final String configName;
-    private final Path compilerPath;
-    private final String compileArguments;
-    private final String executionCommand;
-    private final Path expectedOutputFilePath;
+    private String configName;
+    private Path compilerPath;
+    private String compileArguments;
+    private String executionCommand;
+    private Path expectedOutputFilePath;
+
+    public Configuration() {
+        this.configName = "";
+        this.compileArguments = "";
+        this.executionCommand = "";
+    }
 
     public Configuration(String name, Path compiler, String cArgs, String execCmd, Path output) {
         this.configName = name;
@@ -238,11 +244,26 @@ public class Configuration {
         return fullLog;
     }
 
-    // Simple getters
+    // Simple getters and setters
     public String getConfigName() { return configName; }
+    public void setConfigName(String configName) { this.configName = configName; }
+
     public Path getCompilerPath() { return compilerPath; }
+    public void setCompilerPath(Path compilerPath) { this.compilerPath = compilerPath; }
+
     public String getCompileArguments() { return compileArguments; }
+    public void setCompileArguments(String compileArguments) { this.compileArguments = compileArguments; }
+
     public String getExecutionCommand() { return executionCommand; }
+    public void setExecutionCommand(String executionCommand) { this.executionCommand = executionCommand; }
+
     public Path getExpectedOutputFilePath() { return expectedOutputFilePath; }
+    public void setExpectedOutputFilePath(Path expectedOutputFilePath) { this.expectedOutputFilePath = expectedOutputFilePath; }
+
+    // Configuration objects look clean inside JList UI component
+    @Override
+    public String toString() {
+        return (configName == null || configName.trim().isEmpty()) ? "New Configuration" : configName;
+    }
 
 }
