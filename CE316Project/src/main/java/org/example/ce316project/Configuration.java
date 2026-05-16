@@ -1,58 +1,81 @@
 package org.example.ce316project;
 
-import java.nio.file.Path;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.regex.Pattern;
+import java.util.concurrent.*;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Configuration {
+
+    // ─────────────────────────────────────────────
+    // Alanlar
+    // ─────────────────────────────────────────────
+
     private final String configName;
     private final Path compilerPath;
     private final String compileArguments;
     private final String executionCommand;
     private final Path expectedOutputFilePath;
 
+    /** Varsayılan zaman aşımı süresi (saniye). Sonsuz döngülere karşı koruma. */
+    private static final int TIMEOUT_SECONDS = 30;
+
+    // ─────────────────────────────────────────────
+    // Constructor
+    // ─────────────────────────────────────────────
+
     public Configuration(String name, Path compiler, String cArgs, String execCmd, Path output) {
-        this.configName = name;
-        this.compilerPath = compiler;
-        this.compileArguments = cArgs;
-        this.executionCommand = execCmd;
+        this.configName            = name;
+        this.compilerPath          = compiler;
+        this.compileArguments      = cArgs;
+        this.executionCommand      = execCmd;
         this.expectedOutputFilePath = output;
     }
 
+    // ─────────────────────────────────────────────
+    // Ana Çalıştırma Metodu
+    // ─────────────────────────────────────────────
+
     /**
-     * Compiles the code if needed, then runs it and returns the full log.
-     * The log includes both the compile step and the run step.
+     * Kodu derler (gerekiyorsa) ve çalıştırır, tam log'u döndürür.
      *
-     * If compilation fails, the method stops and returns that result.
-     * If an execution command is missing, it returns a clear error message.
+     * Derleme başarısız olursa erken çıkar.
+     * Her adım için 30 saniye timeout uygulanır.
+     *
+     * @param workingDirectory Öğrenci kodunun bulunduğu dizin.
+     *                         null verilirse JVM'in mevcut dizini kullanılır.
+     * @return Derleme ve çalıştırma çıktısını içeren tam log
      */
-    public String executeScript() {
+    public String executeScript(Path workingDirectory) {
         StringBuilder fullLog = new StringBuilder();
 
-        // Step 1: Compile if compiler path and arguments are provided
-        if (compilerPath != null && compileArguments != null && !compileArguments.trim().isEmpty()) {
+        // ── Adım 1: Derleme (opsiyonel) ─────────────────
+        if (compilerPath != null
+                && compileArguments != null
+                && !compileArguments.trim().isEmpty()) {
+
             List<String> compileCommand = prepareCommand(compilerPath, compileArguments);
-            ProcessResult compileResult = runProcess(compileCommand);
+            ProcessResult compileResult = runProcess(compileCommand, workingDirectory);
 
             fullLog.append("=== Compilation ===\n");
             fullLog.append("Exit code: ").append(compileResult.exitCode).append("\n");
             fullLog.append(compileResult.output);
 
-            // If compilation failed, return early
+            // Derleme başarısız olduysa çalıştırma adımına geçme
             if (compileResult.exitCode != 0) {
                 return fullLog.toString();
             }
         }
 
-        // Step 2: Execute using executionCommand
+        // ── Adım 2: Çalıştırma ──────────────────────────
         if (executionCommand == null || executionCommand.trim().isEmpty()) {
-            // This is a configuration error; return early with a clear message.
             fullLog.append("\n=== Execution ===\n");
             fullLog.append("Error: No execution command provided. For compiled languages (C, C++, Java),");
             fullLog.append(" you must provide an executionCommand (e.g., 'java -cp bin Main' or './program').\n");
@@ -60,12 +83,12 @@ public class Configuration {
         }
 
         List<String> executionList = parseCommand(executionCommand);
-
-        ProcessResult execResult = runProcess(executionList);
+        ProcessResult execResult   = runProcess(executionList, workingDirectory);
 
         if (!fullLog.isEmpty()) {
-            fullLog.append("\n=== Execution ===\n");
+            fullLog.append("\n");
         }
+        fullLog.append("=== Execution ===\n");
         fullLog.append("Exit code: ").append(execResult.exitCode).append("\n");
         fullLog.append(execResult.output);
 
@@ -73,14 +96,30 @@ public class Configuration {
     }
 
     /**
-     * Builds the command list for the compiler or other executable.
+     * Geriye dönük uyumluluk için — çalışma dizini belirtilmeden çağrılabilir.
+     * Project.java içindeki eski çağrılar için gerekli.
+     */
+    public String executeScript() {
+        return executeScript(null);
+    }
+
+    // ─────────────────────────────────────────────
+    // Komut Hazırlama
+    // ─────────────────────────────────────────────
+
+    /**
+     * Derleyici yolu ve argümanlarından komut listesi oluşturur.
+     *
+     * Örnek:
+     *   compiler = /usr/bin/gcc
+     *   args     = -o main main.c
+     *   sonuç    = ["/usr/bin/gcc", "-o", "main", "main.c"]
      */
     private List<String> prepareCommand(Path executable, String args) {
         List<String> list = new ArrayList<>();
         list.add(executable.toString());
 
         if (args != null && !args.trim().isEmpty()) {
-            // Keep the same parsing rule here so quoted arguments stay intact.
             list.addAll(parseCommand(args));
         }
 
@@ -88,11 +127,15 @@ public class Configuration {
     }
 
     /**
-     * Splits a command string into parts.
-     * Quoted text stays together, so paths with spaces still work.
+     * Bir komut string'ini parçalara ayırır.
+     * Tırnak içindeki boşluklar korunur.
      *
-     * Example: java -cp "My Programs" Main
-     * becomes: [java, -cp, My Programs, Main]
+     * Örnek:
+     *   "java -cp \"My Programs\" Main"
+     *   → ["java", "-cp", "My Programs", "Main"]
+     *
+     * Düzeltme: Orijinal regex "[^\"\\s]\\S*" ilk karakteri kaçırıyordu.
+     * Doğru pattern: "(\"[^\"]*\"|\\S+)" — tüm tokenleri yakalar.
      */
     private List<String> parseCommand(String commandStr) {
         List<String> list = new ArrayList<>();
@@ -101,70 +144,107 @@ public class Configuration {
             return list;
         }
 
-        // Match either a quoted piece or a normal space-free piece.
-        Pattern pattern = Pattern.compile("[^\"\\s]\\S*|\"[^\"]*\"");
+        // Düzeltilmiş regex:
+        // "([^"]*)"  → tırnak içindeki her şeyi bir token olarak al
+        // \S+        → boşluk içermeyen her kelimeyi al
+        Pattern pattern = Pattern.compile("\"([^\"]*)\"|\\S+");
         Matcher matcher = pattern.matcher(commandStr);
 
         while (matcher.find()) {
-            String token = matcher.group(0);
-            // Remove surrounding quotes if present
-            if (token.startsWith("\"") && token.endsWith("\"")) {
-                token = token.substring(1, token.length() - 1);
+            if (matcher.group(1) != null) {
+                // Tırnak içindeki grup — tırnaklar olmadan ekle
+                list.add(matcher.group(1));
+            } else {
+                // Normal kelime
+                list.add(matcher.group(0));
             }
-            list.add(token);
         }
 
         return list;
     }
 
+    // ─────────────────────────────────────────────
+    // Süreç Çalıştırma
+    // ─────────────────────────────────────────────
+
     /**
-     * Small holder for a process exit code and its output.
+     * Küçük yardımcı sınıf — süreç çıkış kodu ve çıktısını tutar.
      */
     private static class ProcessResult {
-        int exitCode;
-        String output;
+        final int exitCode;
+        final String output;
 
         ProcessResult(int exitCode, String output) {
             this.exitCode = exitCode;
-            this.output = output;
+            this.output   = output;
         }
     }
 
     /**
-     * Runs a command and collects its output.
-     * stdout and stderr are merged so the result is easier to read.
+     * Verilen komutu bir alt süreç olarak çalıştırır.
+     * stdout ve stderr birleştirilir.
+     * TIMEOUT_SECONDS süre aşılırsa süreç zorla sonlandırılır.
+     *
+     * @param command          Çalıştırılacak komut ve argümanlar
+     * @param workingDirectory Sürecin çalışacağı dizin (null → JVM dizini)
+     * @return ProcessResult (exit code + çıktı)
      */
-    private ProcessResult runProcess(List<String> command) {
+    private ProcessResult runProcess(List<String> command, Path workingDirectory) {
         StringBuilder output = new StringBuilder();
         int exitCode = -1;
 
         try {
             ProcessBuilder pb = new ProcessBuilder(command);
+            pb.redirectErrorStream(true); // stdout + stderr birleştir
 
-            // Put stdout and stderr together so we do not miss errors.
-            pb.redirectErrorStream(true);
+            if (workingDirectory != null && workingDirectory.toFile().isDirectory()) {
+                pb.directory(workingDirectory.toFile());
+            }
 
             Process process = pb.start();
 
-            // Read all output before waiting for the process to finish.
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    output.append(line).append("\n");
+            // Çıktıyı ayrı thread'de oku — büyük çıktılarda buffer dolmasını önler
+            ExecutorService reader = Executors.newSingleThreadExecutor();
+            Future<String> outputFuture = reader.submit(() -> {
+                StringBuilder sb = new StringBuilder();
+                try (BufferedReader br = new BufferedReader(
+                        new InputStreamReader(process.getInputStream()))) {
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        sb.append(line).append("\n");
+                    }
                 }
+                return sb.toString();
+            });
+
+            // Timeout ile bekle
+            boolean finished = process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+            if (!finished) {
+                process.destroyForcibly();
+                reader.shutdownNow();
+                output.append("Error: Process timed out after ")
+                      .append(TIMEOUT_SECONDS)
+                      .append(" seconds. Possible infinite loop.\n");
+                return new ProcessResult(-1, output.toString());
             }
 
-            // Wait until the command finishes.
-            exitCode = process.waitFor();
+            // Çıktıyı al
+            try {
+                output.append(outputFuture.get(5, TimeUnit.SECONDS));
+            } catch (TimeoutException | ExecutionException e) {
+                output.append("Warning: Could not fully read process output.\n");
+            }
+
+            reader.shutdown();
+            exitCode = process.exitValue();
 
         } catch (InterruptedException ie) {
-            // Keep the interrupt flag set so higher-level code can notice it.
             Thread.currentThread().interrupt();
             exitCode = -1;
             output.append("Error: Process execution was interrupted.\n");
 
         } catch (IOException e) {
-            // Usually means the command was wrong or not on PATH.
             exitCode = -1;
             output.append("Error: Could not start process. Verify the command path is correct.\n");
             output.append("Details: ").append(e.getMessage()).append("\n");
@@ -173,9 +253,16 @@ public class Configuration {
         return new ProcessResult(exitCode, output.toString());
     }
 
+    // ─────────────────────────────────────────────
+    // Çıktı Karşılaştırma
+    // ─────────────────────────────────────────────
+
     /**
-     * Compares two outputs after cleaning them up a bit first.
-     * Use this when you already have the raw program output.
+     * İki çıktıyı normalize edip karşılaştırır.
+     *
+     * @param actualOutput   Programın gerçek çıktısı
+     * @param expectedOutput Beklenen çıktı
+     * @return true → eşleşiyor, false → eşleşmiyor
      */
     public boolean compareOutput(String actualOutput, String expectedOutput) {
         if (actualOutput == null || expectedOutput == null) {
@@ -189,7 +276,35 @@ public class Configuration {
     }
 
     /**
-     * Shortcut for comparing the output from executeScript() with an expected file.
+     * executeScript() çıktısını beklenen çıktı dosyasıyla karşılaştırır.
+     * Beklenen çıktıyı expectedOutputFilePath'den okur.
+     *
+     * @param fullLog executeScript()'in döndürdüğü tam log
+     * @return true → eşleşiyor, false → eşleşmiyor veya dosya okunamadı
+     */
+    public boolean compareWithExpectedFile(String fullLog) {
+        if (expectedOutputFilePath == null) {
+            System.out.println("[Config] Hata: Beklenen çıktı dosyası yolu tanımlanmamış.");
+            return false;
+        }
+
+        try {
+            String expectedOutput = Files.readString(expectedOutputFilePath);
+            String actualOutput   = extractExecutionOutput(fullLog);
+            return compareOutput(actualOutput, expectedOutput);
+        } catch (IOException e) {
+            System.out.println("[Config] Beklenen çıktı dosyası okunamadı: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * executeScript() çıktısını verilen expectedOutput string'iyle karşılaştırır.
+     * Beklenen çıktı zaten okunmuşsa bu metodu kullan.
+     *
+     * @param fullLog        executeScript()'in döndürdüğü tam log
+     * @param expectedOutput Karşılaştırılacak beklenen çıktı string'i
+     * @return true → eşleşiyor
      */
     public boolean compareExecutionOutput(String fullLog, String expectedOutput) {
         String rawOutput = extractExecutionOutput(fullLog);
@@ -197,52 +312,57 @@ public class Configuration {
     }
 
     /**
-     * Makes output easier to compare by fixing line endings and extra spaces.
+     * Çıktıyı karşılaştırma için normalize eder:
+     * - Satır sonlarını \n'e dönüştürür (Windows/Linux uyumu)
+     * - Satır sonu boşluklarını temizler
+     * - Baş ve son boşlukları kaldırır
      */
     private String normalizeOutput(String output) {
-        if (output == null) {
-            return "";
-        }
+        if (output == null) return "";
 
-        // Turn all line endings into \n.
         String normalized = output.replaceAll("\\r\\n|\\r", "\n");
-
-        // Remove extra spaces at the end of each line.
         normalized = normalized.replaceAll("(?m)[ \\t]+$", "");
-
-        // Remove blank space around the whole output.
         return normalized.trim();
     }
 
     /**
-     * Pulls out just the program output from the full log.
+     * Tam log içinden sadece program çıktısını çıkarır.
+     * "=== Execution ===" bölümünden sonrasını alır,
+     * "Exit code:" satırını atlar.
+     *
+     * @param fullLog executeScript()'in döndürdüğü tam log
+     * @return Sadece program çıktısı
      */
     public static String extractExecutionOutput(String fullLog) {
+        if (fullLog == null) return "";
+
         String[] parts = fullLog.split("=== Execution ===");
         if (parts.length > 1) {
             String execPart = parts[1];
-            String[] lines = execPart.split("\n");
+            String[] lines  = execPart.split("\n");
             StringBuilder output = new StringBuilder();
 
-            for (int i = 1; i < lines.length; i++) {
-                // Skip the exit code line and keep the actual program output.
-                if (!lines[i].startsWith("Exit code:")) {
+            for (int i = 0; i < lines.length; i++) {
+                if (!lines[i].startsWith("Exit code:") && !lines[i].isBlank()) {
                     output.append(lines[i]);
                     if (i < lines.length - 1) {
                         output.append("\n");
                     }
                 }
             }
-            return output.toString();
+            return output.toString().trim();
         }
-        return fullLog;
+
+        return fullLog.trim();
     }
 
-    // Simple getters
-    public String getConfigName() { return configName; }
-    public Path getCompilerPath() { return compilerPath; }
-    public String getCompileArguments() { return compileArguments; }
-    public String getExecutionCommand() { return executionCommand; }
-    public Path getExpectedOutputFilePath() { return expectedOutputFilePath; }
+    // ─────────────────────────────────────────────
+    // Getter'lar
+    // ─────────────────────────────────────────────
 
+    public String getConfigName()            { return configName; }
+    public Path   getCompilerPath()          { return compilerPath; }
+    public String getCompileArguments()      { return compileArguments; }
+    public String getExecutionCommand()      { return executionCommand; }
+    public Path   getExpectedOutputFilePath(){ return expectedOutputFilePath; }
 }

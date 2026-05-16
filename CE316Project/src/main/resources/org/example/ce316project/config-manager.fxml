@@ -31,6 +31,7 @@
                     <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                     <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                     <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                 </rowConstraints>
                 <children>
                     <Label text="Configuration Name:" />
@@ -49,6 +50,10 @@
 
                     <Label text="Run Command:" GridPane.rowIndex="3" />
                     <TextField fx:id="runCmdField" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+
+                    <Label text="Expected Output:" GridPane.rowIndex="4" />
+                    <TextField fx:id="expectedOutputField" GridPane.columnIndex="1" GridPane.rowIndex="4"
+                               promptText="Path to expected output file..." />
                 </children>
             </GridPane>
 

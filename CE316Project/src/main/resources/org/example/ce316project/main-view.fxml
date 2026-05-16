@@ -10,12 +10,12 @@
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="org.example.ce316project.MainController"
-            prefHeight="600.0" prefWidth="900.0">
+            prefHeight="700.0" prefWidth="1000.0">
 
     <top>
         <MenuBar BorderPane.alignment="CENTER">
             <menus>
-                <Menu mnemonicParsing="false" text="file">
+                <Menu mnemonicParsing="false" text="File">
                     <items>
                         <MenuItem mnemonicParsing="false" onAction="#handleNewProject" text="New Project..." />
                         <MenuItem mnemonicParsing="false" onAction="#handleOpenProject" text="Open Project..." />
@@ -41,9 +41,9 @@
     </top>
 
     <center>
-        <SplitPane dividerPositions="0.25" prefHeight="160.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+        <SplitPane dividerPositions="0.25" prefHeight="660.0" prefWidth="1000.0" BorderPane.alignment="CENTER">
             <items>
-                <VBox prefHeight="200.0" prefWidth="100.0" spacing="5.0">
+                <VBox prefHeight="660.0" prefWidth="250.0" spacing="5.0">
                     <padding>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                     </padding>
@@ -51,7 +51,7 @@
                     <ListView fx:id="studentListView" VBox.vgrow="ALWAYS" />
                 </VBox>
 
-                <SplitPane dividerPositions="0.3" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0">
+                <SplitPane dividerPositions="0.22" orientation="VERTICAL" prefHeight="660.0" prefWidth="750.0">
                     <items>
                         <VBox spacing="10.0">
                             <padding>
@@ -66,7 +66,8 @@
                                 <TextField fx:id="directoryTextField" HBox.hgrow="ALWAYS" editable="false"/>
                                 <Button mnemonicParsing="false" onAction="#handleBrowseDirectory" text="Browse..." />
                             </HBox>
-                            <Button mnemonicParsing="false" onAction="#handleRunAssignments" text="Run Assignments" style="-fx-font-weight: bold; -fx-base: #4CAF50;" />
+                            <Button mnemonicParsing="false" onAction="#handleRunAssignments" text="Run Assignments"
+                                    style="-fx-font-weight: bold; -fx-base: #4CAF50;" />
                         </VBox>
 
                         <VBox spacing="5.0">
@@ -77,9 +78,12 @@
                             <TableView fx:id="resultsTableView" VBox.vgrow="ALWAYS">
                                 <columns>
                                     <TableColumn fx:id="studentIdCol" prefWidth="150.0" text="Student ID" />
-                                    <TableColumn fx:id="statusCol" prefWidth="100.0" text="Status" />
-                                    <TableColumn fx:id="detailsCol" prefWidth="300.0" text="Details / Errors" />
+                                    <TableColumn fx:id="statusCol"    prefWidth="120.0" text="Status" />
+                                    <TableColumn fx:id="detailsCol"   prefWidth="460.0" text="Details / Errors" />
                                 </columns>
+                                <columnResizePolicy>
+                                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                                </columnResizePolicy>
                             </TableView>
                         </VBox>
                     </items>
