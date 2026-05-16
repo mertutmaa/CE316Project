@@ -3,8 +3,12 @@ package org.example.ce316project;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import java.nio.file.Path;
 
 public class MainController {
+
+
+    private AssignmentManager manager;
 
     @FXML
     private ListView<String> studentListView;
@@ -29,7 +33,9 @@ public class MainController {
 
     @FXML
     public void initialize() {
-        // will set up table columns here if we use SQL
+        // Initialize the manager when the GUI loads
+        manager = new AssignmentManager();
+        System.out.println("AssignmentManager connected.");
     }
 
     // menu actions
@@ -55,9 +61,17 @@ public class MainController {
 
     @FXML
     void handleManageConfigs(ActionEvent event) {
-        System.out.println("manage config this one will open a new page");
-    }
 
+        manager.createConfiguration("Test Config", Path.of("/usr/bin/gcc"), "-o main", "./main", Path.of("out.txt"));
+
+        // Clear the current items and update the ComboBox with the new configuration list
+        configComboBox.getItems().clear();
+        for (Configuration conf : manager.getConfigurations()) {
+            configComboBox.getItems().add(conf.getConfigName());
+        }
+
+        System.out.println("Configuration list updated in the interface.");
+    }
     @FXML
     void handleImportConfig(ActionEvent event) {
         System.out.println("import conf");
