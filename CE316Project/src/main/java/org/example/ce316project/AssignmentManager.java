@@ -193,7 +193,7 @@ public class AssignmentManager {
 
         Project newProject = new Project(name, config);
 
-        // Veritabanına kaydet
+        // Add into database
         String sql = """
                 INSERT INTO projects (name, config_name, zip_directory)
                 VALUES (?, ?, ?)

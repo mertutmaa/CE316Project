@@ -343,7 +343,7 @@ public class Configuration {
             StringBuilder output = new StringBuilder();
 
             for (int i = 0; i < lines.length; i++) {
-                if (!lines[i].startsWith("Exit code:") && !lines[i].isBlank()) {
+                if (!lines[i].startsWith("Exit code:")) {
                     output.append(lines[i]);
                     if (i < lines.length - 1) {
                         output.append("\n");
