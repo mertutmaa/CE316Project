@@ -8,6 +8,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.FileChooser;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -15,14 +16,14 @@ import java.nio.file.Path;
 public class MainController {
 
     // ─────────────────────────────────────────────
-    // Bağımlılıklar
+    // Dependencies
     // ─────────────────────────────────────────────
 
     private AssignmentManager manager;
     private Project currentProject;
 
     // ─────────────────────────────────────────────
-    // FXML Bileşenleri
+    // FXML Components
     // ─────────────────────────────────────────────
 
     @FXML
@@ -47,27 +48,27 @@ public class MainController {
     private TableColumn<StudentSubmission, String> detailsCol;
 
     // ─────────────────────────────────────────────
-    // Başlatma
+    // Initialization
     // ─────────────────────────────────────────────
 
     @FXML
     public void initialize() {
         manager = new AssignmentManager();
-        System.out.println("[Main] AssignmentManager başlatıldı.");
+        System.out.println("[Main] AssignmentManager initialized.");
 
         setupTableColumns();
         refreshConfigComboBox();
     }
 
     /**
-     * TableView sütunlarını StudentSubmission alanlarına bağlar.
+     * Binds TableView columns to StudentSubmission fields.
      */
     private void setupTableColumns() {
         studentIdCol.setCellValueFactory(new PropertyValueFactory<>("studentID"));
         statusCol.setCellValueFactory(new PropertyValueFactory<>("passedTesting"));
         detailsCol.setCellValueFactory(new PropertyValueFactory<>("reportDetails"));
 
-        // Durum sütununu okunabilir hale getir: true → PASSED, false → FAILED
+        // Render status column as readable text: true → PASSED, false → FAILED
         statusCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(Boolean passed, boolean empty) {
@@ -87,7 +88,7 @@ public class MainController {
     }
 
     /**
-     * ComboBox'ı AssignmentManager'daki güncel konfigürasyon listesiyle doldurur.
+     * Refreshes the ComboBox with the current configuration list from AssignmentManager.
      */
     private void refreshConfigComboBox() {
         configComboBox.getItems().clear();
@@ -97,88 +98,86 @@ public class MainController {
     }
 
     // ─────────────────────────────────────────────
-    // Menü — Proje İşlemleri
+    // Menu — Project Operations
     // ─────────────────────────────────────────────
 
     /**
-     * Yeni proje oluşturur.
-     * Seçili konfigürasyon ve dizin bilgisiyle Project nesnesi üretir.
+     * Creates a new project using the selected configuration.
      */
     @FXML
     void handleNewProject(ActionEvent event) {
         String selectedConfig = configComboBox.getValue();
         if (selectedConfig == null || selectedConfig.isBlank()) {
-            showAlert(Alert.AlertType.WARNING, "Konfigürasyon Seçilmedi",
-                    "Lütfen önce bir konfigürasyon seçin.");
+            showAlert(Alert.AlertType.WARNING, "No Configuration Selected",
+                    "Please select a configuration first.");
             return;
         }
 
-        // Proje adı için dialog
         TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Yeni Proje");
-        dialog.setHeaderText("Proje Adı Girin");
-        dialog.setContentText("Ad:");
+        dialog.setTitle("New Project");
+        dialog.setHeaderText("Enter Project Name");
+        dialog.setContentText("Name:");
 
         dialog.showAndWait().ifPresent(projectName -> {
             if (projectName.isBlank()) {
-                showAlert(Alert.AlertType.WARNING, "Geçersiz Ad", "Proje adı boş olamaz.");
+                showAlert(Alert.AlertType.WARNING, "Invalid Name", "Project name cannot be empty.");
                 return;
             }
 
             Configuration config = manager.findConfigurationByName(selectedConfig);
             if (config == null) {
-                showAlert(Alert.AlertType.ERROR, "Hata", "Konfigürasyon bulunamadı: " + selectedConfig);
+                showAlert(Alert.AlertType.ERROR, "Error", "Configuration not found: " + selectedConfig);
                 return;
             }
 
             Project project = manager.createProject(projectName, config);
             if (project == null) {
-                showAlert(Alert.AlertType.ERROR, "Hata",
-                        "Proje oluşturulamadı. Aynı isimde bir proje mevcut olabilir.");
+                showAlert(Alert.AlertType.ERROR, "Error",
+                        "Could not create project. A project with the same name may already exist.");
                 return;
             }
 
             currentProject = project;
             clearUI();
-            showAlert(Alert.AlertType.INFORMATION, "Başarılı",
-                    "Proje oluşturuldu: " + projectName);
-            System.out.println("[Main] Yeni proje oluşturuldu: " + projectName);
+            showAlert(Alert.AlertType.INFORMATION, "Success",
+                    "Project created: " + projectName);
+            System.out.println("[Main] New project created: " + projectName);
         });
     }
 
     /**
-     * Mevcut bir projeyi ada göre yükler.
+     * Loads an existing project by name.
      */
     @FXML
     void handleOpenProject(ActionEvent event) {
         TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Proje Aç");
-        dialog.setHeaderText("Proje Adını Girin");
-        dialog.setContentText("Ad:");
+        dialog.setTitle("Open Project");
+        dialog.setHeaderText("Enter Project Name");
+        dialog.setContentText("Name:");
 
         dialog.showAndWait().ifPresent(projectName -> {
             if (projectName.isBlank()) return;
 
             Project loaded = manager.loadProject(projectName);
             if (loaded == null) {
-                showAlert(Alert.AlertType.ERROR, "Bulunamadı",
-                        "Proje bulunamadı: " + projectName);
+                showAlert(Alert.AlertType.ERROR, "Not Found",
+                        "Project not found: " + projectName);
                 return;
             }
 
             currentProject = loaded;
             loadProjectIntoUI(currentProject);
-            System.out.println("[Main] Proje yüklendi: " + projectName);
+            System.out.println("[Main] Project loaded: " + projectName);
         });
     }
 
     /**
-     * Mevcut projenin ZIP dizinini veritabanında günceller (kaydetme işlevi).
+     * Saves the current project's ZIP directory to the database.
      */
     @FXML
     void handleSaveProject(ActionEvent event) {
         if (currentProject == null) {
-            showAlert(Alert.AlertType.WARNING, "Proje Yok", "Kaydedilecek açık bir proje yok.");
+            showAlert(Alert.AlertType.WARNING, "No Project", "There is no open project to save.");
             return;
         }
 
@@ -187,13 +186,13 @@ public class MainController {
             manager.updateProjectZipDirectory(currentProject, Path.of(dirText));
         }
 
-        showAlert(Alert.AlertType.INFORMATION, "Kaydedildi",
-                currentProject.getName() + " projesi kaydedildi.");
-        System.out.println("[Main] Proje kaydedildi: " + currentProject.getName());
+        showAlert(Alert.AlertType.INFORMATION, "Saved",
+                currentProject.getName() + " has been saved.");
+        System.out.println("[Main] Project saved: " + currentProject.getName());
     }
 
     /**
-     * Uygulamayı kapatır.
+     * Exits the application.
      */
     @FXML
     void handleExit(ActionEvent event) {
@@ -202,12 +201,12 @@ public class MainController {
     }
 
     // ─────────────────────────────────────────────
-    // Menü — Konfigürasyon İşlemleri
+    // Menu — Configuration Operations
     // ─────────────────────────────────────────────
 
     /**
-     * Konfigürasyon yönetim ekranını modal olarak açar.
-     * Kapandıktan sonra ComboBox'ı günceller.
+     * Opens the configuration management screen as a modal window.
+     * Updates the ComboBox after the window is closed.
      */
     @FXML
     void handleManageConfigs(ActionEvent event) {
@@ -217,83 +216,166 @@ public class MainController {
             );
             javafx.scene.Parent root = fxmlLoader.load();
 
-            // Manager'ı ConfigManagerController'a inject et
+            // Inject manager into ConfigManagerController
             ConfigManagerController configController = fxmlLoader.getController();
             configController.setManager(manager);
 
             Stage stage = new Stage();
-            stage.setTitle("Konfigürasyonları Yönet");
+            stage.setTitle("Manage Configurations");
             stage.setScene(new javafx.scene.Scene(root));
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.showAndWait();
 
-            // Pencere kapandıktan sonra ComboBox'ı güncelle
+            // Refresh ComboBox after the window closes
             refreshConfigComboBox();
-            System.out.println("[Main] Konfigürasyon listesi güncellendi.");
+            System.out.println("[Main] Configuration list updated.");
 
         } catch (Exception e) {
-            showAlert(Alert.AlertType.ERROR, "Hata",
-                    "Konfigürasyon ekranı açılamadı: " + e.getMessage());
+            showAlert(Alert.AlertType.ERROR, "Error",
+                    "Could not open configuration screen: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    /**
-     * Konfigürasyonu dosyadan içe aktarır.
-     * TODO: AssignmentManager.importConfiguration() implement edilince burası da çalışacak.
-     */
     @FXML
-    void handleImportConfig(ActionEvent event) {
-        showAlert(Alert.AlertType.INFORMATION, "Yakında",
-                "İçe aktarma özelliği henüz implement edilmedi.");
-        System.out.println("[Main] Import config — henüz implement edilmedi.");
+void handleImportConfig(ActionEvent event) {
+    FileChooser fileChooser = new FileChooser();
+    fileChooser.setTitle("Import Configuration");
+    fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("JSON Files", "*.json")
+    );
+
+    Stage stage = (Stage) directoryTextField.getScene().getWindow();
+    File selectedFile = fileChooser.showOpenDialog(stage);
+
+    if (selectedFile != null) {
+        Configuration imported = manager.importConfiguration(selectedFile.getAbsolutePath());
+        if (imported != null) {
+            refreshConfigComboBox();
+            showAlert(Alert.AlertType.INFORMATION, "Imported",
+                    "Configuration imported: " + imported.getConfigName());
+        } else {
+            showAlert(Alert.AlertType.ERROR, "Import Failed",
+                    "Could not import configuration. File may be invalid or a configuration with the same name already exists.");
+        }
+    }
+}
+
+@FXML
+void handleExportConfig(ActionEvent event) {
+    String selectedConfig = configComboBox.getValue();
+    if (selectedConfig == null || selectedConfig.isBlank()) {
+        showAlert(Alert.AlertType.WARNING, "No Configuration Selected",
+                "Please select a configuration from the dropdown to export.");
+        return;
     }
 
-    /**
-     * Konfigürasyonu dosyaya dışa aktarır.
-     * TODO: Dışa aktarma implement edilecek.
-     */
-    @FXML
-    void handleExportConfig(ActionEvent event) {
-        showAlert(Alert.AlertType.INFORMATION, "Yakında",
-                "Dışa aktarma özelliği henüz implement edilmedi.");
-        System.out.println("[Main] Export config — henüz implement edilmedi.");
+    FileChooser fileChooser = new FileChooser();
+    fileChooser.setTitle("Export Configuration");
+    fileChooser.setInitialFileName(selectedConfig + ".json");
+    fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("JSON Files", "*.json")
+    );
+
+    Stage stage = (Stage) directoryTextField.getScene().getWindow();
+    File saveFile = fileChooser.showSaveDialog(stage);
+
+    if (saveFile != null) {
+        boolean success = manager.exportConfiguration(selectedConfig, saveFile.getAbsolutePath());
+        if (success) {
+            showAlert(Alert.AlertType.INFORMATION, "Exported",
+                    "Configuration exported to: " + saveFile.getAbsolutePath());
+        } else {
+            showAlert(Alert.AlertType.ERROR, "Export Failed",
+                    "Could not export configuration.");
+        }
     }
+}
 
     // ─────────────────────────────────────────────
-    // Menü — Yardım
+    // Menu — Help
     // ─────────────────────────────────────────────
 
     @FXML
     void handleOpenManual(ActionEvent event) {
-        showAlert(Alert.AlertType.INFORMATION, "Kullanım Kılavuzu",
-                "IAE — Integrated Assignment Evaluator\n\n"
-                + "1. Konfigürasyon oluşturun (Konfigürasyonlar → Yönet)\n"
-                + "2. Yeni proje oluşturun (Dosya → Yeni Proje)\n"
-                + "3. ZIP dizinini seçin\n"
-                + "4. Değerlendirmeyi başlatın");
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("User Manual");
+        alert.setHeaderText("IAE — Integrated Assignment Evaluator");
+        alert.setContentText(
+            "─── QUICK TEST (using test_submissions folder) ───\n" +
+            "The test_submissions folder included with the project\n" +
+            "contains a ready-to-use test environment.\n\n" +
+            "1. Configuration → Manage Configurations\n" +
+            "   • Select 'Test Config' from the list\n" +
+            "   • Update the Expected Output field:\n" +
+            "     <full path to test_submissions>\\expected.txt\n" +
+            "     Example: C:\\Users\\user\\Desktop\\test_submissions\\expected.txt\n" +
+            "   • Click Save Configuration\n\n" +
+            "2. File → Open Project\n" +
+            "   • Enter: Test Project\n\n" +
+            "3. Click Browse... on the main screen\n" +
+            "   • Select the test_submissions folder\n\n" +
+            "4. Click Run Assignments\n" +
+            "   • Student 20210001 should show ✓ PASSED\n\n" +
+
+            "────────────────────────────────────────────\n\n" +
+
+            "─── GENERAL USAGE ───\n\n" +
+            "STEP 1 — Create a Configuration:\n" +
+            "  Configuration → Manage Configurations\n" +
+            "  → + New Configuration\n" +
+            "  → Fill in compiler path, arguments, run command\n" +
+            "  → Set the expected output file path\n" +
+            "  → Save Configuration\n\n" +
+            "STEP 2 — Create a Project:\n" +
+            "  File → New Project\n" +
+            "  → Enter a project name\n" +
+            "  → Select a configuration from Active Configuration\n\n" +
+            "STEP 3 — Select ZIP Directory:\n" +
+            "  → Click Browse... and select the folder\n" +
+            "     containing student ZIP files\n" +
+            "  → ZIP files must be named with student ID\n" +
+            "     Example: 20210001.zip\n\n" +
+            "STEP 4 — Run Evaluation:\n" +
+            "  → Click Run Assignments\n" +
+            "  → Results appear in the Execution Reports table\n" +
+            "  ✓ PASSED : Output matched the expected output\n" +
+            "  ✗ FAILED : Output did not match or an error occurred\n\n" +
+
+            "─── EXAMPLE CONFIGURATIONS ───\n" +
+            "Python : Run Command → python hello.py\n" +
+            "C      : Compiler → gcc | Args → -o main main.c\n" +
+            "         Run Command → ./main\n" +
+            "Java   : Compiler → javac | Args → Main.java\n" +
+            "         Run Command → java Main"
+        );
+
+        alert.setResizable(true);
+        alert.getDialogPane().setMinWidth(520);
+        alert.getDialogPane().setMinHeight(580);
+        alert.showAndWait();
     }
 
     // ─────────────────────────────────────────────
-    // Ana Ekran İşlemleri
+    // Main Screen Operations
     // ─────────────────────────────────────────────
 
     /**
-     * ZIP dizini seçmek için DirectoryChooser açar.
-     * Seçilen dizin mevcut projeye atanır.
+     * Opens a DirectoryChooser to select the ZIP directory.
+     * Assigns the selected directory to the current project.
      */
     @FXML
     void handleBrowseDirectory(ActionEvent event) {
         if (currentProject == null) {
-            showAlert(Alert.AlertType.WARNING, "Proje Yok",
-                    "Lütfen önce bir proje oluşturun veya açın.");
+            showAlert(Alert.AlertType.WARNING, "No Project",
+                    "Please create or open a project first.");
             return;
         }
 
         DirectoryChooser directoryChooser = new DirectoryChooser();
-        directoryChooser.setTitle("Öğrenci ZIP Dizinini Seç");
+        directoryChooser.setTitle("Select Student ZIP Directory");
 
-        // Mevcut dizin varsa oradan başla
+        // Start from the current directory if already set
         String current = directoryTextField.getText();
         if (current != null && !current.isBlank()) {
             File currentDir = new File(current);
@@ -308,95 +390,87 @@ public class MainController {
         if (selectedDir != null) {
             directoryTextField.setText(selectedDir.getAbsolutePath());
             currentProject.setSubmissionZIPsDirectory(Path.of(selectedDir.getAbsolutePath()));
-            System.out.println("[Main] ZIP dizini seçildi: " + selectedDir.getAbsolutePath());
+            System.out.println("[Main] ZIP directory selected: " + selectedDir.getAbsolutePath());
         }
     }
 
     /**
-     * Tüm öğrenci gönderilerini değerlendirir.
-     * Önce ZIP'leri işler, sonra evaluation loop'u çalıştırır,
-     * sonuçları TableView ve studentListView'e yükler.
+     * Evaluates all student submissions.
+     * Processes ZIPs, runs the evaluation loop, and loads results into the UI.
      */
     @FXML
     void handleRunAssignments(ActionEvent event) {
         if (currentProject == null) {
-            showAlert(Alert.AlertType.WARNING, "Proje Yok",
-                    "Lütfen önce bir proje oluşturun veya açın.");
+            showAlert(Alert.AlertType.WARNING, "No Project",
+                    "Please create or open a project first.");
             return;
         }
 
         String dirText = directoryTextField.getText();
         if (dirText == null || dirText.isBlank()) {
-            showAlert(Alert.AlertType.WARNING, "Dizin Seçilmedi",
-                    "Lütfen öğrenci ZIP dosyalarının bulunduğu dizini seçin.");
+            showAlert(Alert.AlertType.WARNING, "No Directory Selected",
+                    "Please select the folder containing student ZIP files.");
             return;
         }
 
         String selectedConfig = configComboBox.getValue();
         if (selectedConfig == null || selectedConfig.isBlank()) {
-            showAlert(Alert.AlertType.WARNING, "Konfigürasyon Seçilmedi",
-                    "Lütfen bir konfigürasyon seçin.");
+            showAlert(Alert.AlertType.WARNING, "No Configuration Selected",
+                    "Please select a configuration.");
             return;
         }
 
-        // Konfigürasyonu güncelle
         Configuration config = manager.findConfigurationByName(selectedConfig);
         if (config == null) {
-            showAlert(Alert.AlertType.ERROR, "Hata",
-                    "Konfigürasyon bulunamadı: " + selectedConfig);
+            showAlert(Alert.AlertType.ERROR, "Error",
+                    "Configuration not found: " + selectedConfig);
             return;
         }
+
         currentProject.setConfiguration(config);
         currentProject.setSubmissionZIPsDirectory(Path.of(dirText));
 
-        // ZIP'leri işle
-        System.out.println("[Main] ZIP'ler işleniyor...");
+        System.out.println("[Main] Processing ZIPs...");
         currentProject.processZIPs();
 
         if (currentProject.getSubmissions().isEmpty()) {
-            showAlert(Alert.AlertType.WARNING, "Gönderi Yok",
-                    "Seçilen dizinde ZIP dosyası bulunamadı.");
+            showAlert(Alert.AlertType.WARNING, "No Submissions",
+                    "No ZIP files found in the selected directory.");
             return;
         }
 
-        // Değerlendirmeyi çalıştır
-        System.out.println("[Main] Değerlendirme başlatılıyor...");
+        System.out.println("[Main] Starting evaluation...");
         currentProject.runEvaluationLoop();
 
-        // Sonuçları UI'a yükle
         loadResultsIntoUI();
 
-        showAlert(Alert.AlertType.INFORMATION, "Tamamlandı",
-                currentProject.getSubmissions().size()
-                        + " gönderi değerlendirildi.");
+        showAlert(Alert.AlertType.INFORMATION, "Done",
+                currentProject.getSubmissions().size() + " submission(s) evaluated.");
     }
 
     // ─────────────────────────────────────────────
-    // UI Güncelleme Yardımcıları
+    // UI Update Helpers
     // ─────────────────────────────────────────────
 
     /**
-     * Yüklenen projenin bilgilerini UI bileşenlerine yazar.
+     * Loads the given project's data into the UI components.
      */
     private void loadProjectIntoUI(Project project) {
-        // Dizini yaz
         if (project.getSubmissionZIPsDirectory() != null) {
             directoryTextField.setText(project.getSubmissionZIPsDirectory().toString());
         } else {
             directoryTextField.clear();
         }
 
-        // Konfigürasyonu ComboBox'ta seç
         if (project.getConfiguration() != null) {
             configComboBox.setValue(project.getConfiguration().getConfigName());
         }
 
-        // Sonuçları TableView'e yükle
         loadResultsIntoUI();
     }
 
     /**
-     * Mevcut projenin submission listesini TableView ve studentListView'e yükler.
+     * Loads the current project's submission list into the TableView and studentListView.
      */
     private void loadResultsIntoUI() {
         resultsTableView.getItems().clear();
@@ -411,7 +485,7 @@ public class MainController {
     }
 
     /**
-     * UI bileşenlerini temizler (yeni proje açılınca).
+     * Clears all UI components (called when a new project is created).
      */
     private void clearUI() {
         resultsTableView.getItems().clear();
@@ -420,22 +494,22 @@ public class MainController {
     }
 
     // ─────────────────────────────────────────────
-    // Uygulama Kapatma
+    // Application Close
     // ─────────────────────────────────────────────
 
     /**
-     * IAEApplication.setOnCloseRequest() tarafından çağrılır.
-     * SQLite bağlantısını düzgün kapatır.
+     * Called by IAEApplication.setOnCloseRequest().
+     * Closes the SQLite connection gracefully.
      */
     public void onApplicationClose() {
         if (manager != null) {
             manager.closeDatabase();
-            System.out.println("[Main] Uygulama kapatıldı, veritabanı bağlantısı sonlandırıldı.");
+            System.out.println("[Main] Application closed. Database connection terminated.");
         }
     }
 
     // ─────────────────────────────────────────────
-    // Yardımcı Metotlar
+    // Helper Methods
     // ─────────────────────────────────────────────
 
     private void showAlert(Alert.AlertType type, String title, String message) {

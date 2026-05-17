@@ -4,42 +4,42 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * StudentSubmission — Bir öğrencinin ödev gönderisini temsil eder.
+ * StudentSubmission — Represents a single student's assignment submission.
  *
- * Değerlendirme aşamaları:
- *   Gönderildi → ZIP Çıkartıldı → Derlendi → Çalıştı → Testi Geçti
+ * Evaluation stages:
+ *   Submitted → ZIP Extracted → Compiled → Executed → Passed Testing
  */
 public class StudentSubmission {
 
     // ─────────────────────────────────────────────
-    // Alanlar
+    // Fields
     // ─────────────────────────────────────────────
 
-    /** Öğrenci kimliği — ZIP dosya adından alınır (ör: "20210001"). Değiştirilemez. */
+    /** Student ID — taken from the ZIP file name (e.g. "20210001"). Immutable. */
     private final String studentID;
 
-    /** Kaynak kodun çıkartıldığı dizin yolu. */
+    /** Path to the directory where the source code was extracted. */
     private String extractedSourceDirectory;
 
-    /** Hangi konfigürasyonla değerlendirildi. */
+    /** Name of the configuration used for evaluation. */
     private String usedConfigName;
 
-    /** Derleme aşaması başarılı mı? */
+    /** Whether the compilation step succeeded. */
     private boolean isCompiled;
 
-    /** Çalıştırma aşaması başarılı mı? */
+    /** Whether the execution step succeeded. */
     private boolean ranSuccessfully;
 
-    /** Beklenen çıktıyla eşleşti mi? */
+    /** Whether the output matched the expected output. */
     private boolean passedTesting;
 
-    /** Değerlendirme raporu — hata mesajları veya PASSED/FAILED detayı. */
+    /** Evaluation report — error messages or PASSED/FAILED details. */
     private String reportDetails;
 
-    /** Gönderinin oluşturulma zamanı. */
+    /** Timestamp when the submission object was created. */
     private final LocalDateTime submittedAt;
 
-    /** Değerlendirmenin tamamlandığı zaman. */
+    /** Timestamp when evaluation was completed. */
     private LocalDateTime evaluatedAt;
 
     // ─────────────────────────────────────────────
@@ -47,24 +47,24 @@ public class StudentSubmission {
     // ─────────────────────────────────────────────
 
     /**
-     * @param id   Öğrenci kimliği (ör: "20210001")
-     * @param path ZIP'in çıkartıldığı kaynak dizin yolu
+     * @param id   Student ID (e.g. "20210001")
+     * @param path Path to the directory where the ZIP was extracted
      */
     public StudentSubmission(String id, String path) {
         this.studentID                = id;
         this.extractedSourceDirectory = path;
 
-        this.isCompiled       = false;
-        this.ranSuccessfully  = false;
-        this.passedTesting    = false;
-        this.reportDetails    = "Pending evaluation.";
-        this.submittedAt      = LocalDateTime.now();
-        this.evaluatedAt      = null;
-        this.usedConfigName   = null;
+        this.isCompiled      = false;
+        this.ranSuccessfully = false;
+        this.passedTesting   = false;
+        this.reportDetails   = "Pending evaluation.";
+        this.submittedAt     = LocalDateTime.now();
+        this.evaluatedAt     = null;
+        this.usedConfigName  = null;
     }
 
     // ─────────────────────────────────────────────
-    // Setter'lar
+    // Setters
     // ─────────────────────────────────────────────
 
     public void setExtractedSourceDirectory(String extractedSourceDirectory) {
@@ -92,14 +92,14 @@ public class StudentSubmission {
     }
 
     /**
-     * Değerlendirme tamamlandığında çağrılır, zamanı kaydeder.
+     * Call this when evaluation is complete to record the evaluation timestamp.
      */
     public void markEvaluated() {
         this.evaluatedAt = LocalDateTime.now();
     }
 
     // ─────────────────────────────────────────────
-    // Getter'lar
+    // Getters
     // ─────────────────────────────────────────────
 
     public String getStudentID() {
@@ -115,17 +115,16 @@ public class StudentSubmission {
     }
 
     /**
-     * Java boolean getter standardı: is + FieldName (büyük harf).
-     * JavaFX PropertyValueFactory ve diğer kütüphanelerle uyumlu.
+     * Standard Java boolean getter: is + FieldName (capitalized).
+     * Compatible with JavaFX PropertyValueFactory and other libraries.
      */
     public boolean isCompiled() {
         return isCompiled;
     }
 
     /**
-     * JavaFX TableView PropertyValueFactory için gerekli:
-     * "isCompiled" property'si → isCompiled() metodunu arar.
-     * Geriye dönük uyumluluk için getIsCompiled() de korundu.
+     * Kept for backward compatibility.
+     * JavaFX TableView PropertyValueFactory looks for isCompiled() first.
      */
     public boolean getIsCompiled() {
         return isCompiled;
@@ -160,12 +159,12 @@ public class StudentSubmission {
     }
 
     // ─────────────────────────────────────────────
-    // Yardımcı Metotlar
+    // Helper Methods
     // ─────────────────────────────────────────────
 
     /**
-     * Değerlendirme durumunu kısa bir string olarak döndürür.
-     * Konsol özeti ve debug için kullanışlı.
+     * Returns the evaluation status as a short string.
+     * Useful for console summaries and debugging.
      */
     public String getStatusSummary() {
         if (!isCompiled)      return "COMPILE_ERROR";
@@ -175,7 +174,7 @@ public class StudentSubmission {
     }
 
     /**
-     * Zaman damgasını okunabilir formatta döndürür.
+     * Returns the submission timestamp in a human-readable format.
      */
     public String getFormattedSubmittedAt() {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");

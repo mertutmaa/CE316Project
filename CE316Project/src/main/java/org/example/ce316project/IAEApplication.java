@@ -12,24 +12,24 @@ public class IAEApplication extends Application {
     @Override
     public void start(Stage stage) throws IOException {
 
-        // ── FXML yükleme ─────────────────────────────────
+        // ── Load FXML ────────────────────────────────────
         FXMLLoader fxmlLoader = new FXMLLoader(
                 IAEApplication.class.getResource("main-view.fxml")
         );
         Scene scene = new Scene(fxmlLoader.load(), 1000, 700);
 
-        // ── MainController'a Stage referansı ver ──────────
-        // Böylece controller FileChooser, yeni pencere vb. için Stage'e erişebilir
+        // ── Get MainController reference ─────────────────
+        // Allows the controller to access the Stage for FileChooser, new windows, etc.
         MainController controller = fxmlLoader.getController();
 
-        // ── Pencere kapatılırken veritabanını düzgün kapat ─
+        // ── Close database connection on window close ─────
         stage.setOnCloseRequest(event -> {
             if (controller != null) {
                 controller.onApplicationClose();
             }
         });
 
-        // ── Pencere ayarları ──────────────────────────────
+        // ── Window settings ───────────────────────────────
         stage.setTitle("IAE — Integrated Assignment Evaluator");
         stage.setMinWidth(800);
         stage.setMinHeight(600);

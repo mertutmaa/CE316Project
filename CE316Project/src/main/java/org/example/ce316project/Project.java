@@ -325,9 +325,9 @@ public class Project {
         for (StudentSubmission s : submissions) {
             System.out.printf("%-15s %-10s %-10s %-10s%n",
                     s.getStudentID(),
-                    s.getIsCompiled()       ? "✓" : "✗",
-                    s.getRanSuccessfully()  ? "✓" : "✗",
-                    s.getPassedTesting()    ? "✓" : "✗"
+                    s.getIsCompiled()      ? "✓" : "✗",
+                    s.getRanSuccessfully() ? "✓" : "✗",
+                    s.getPassedTesting()   ? "✓" : "✗"
             );
         }
         System.out.println("==============================");
