@@ -62,10 +62,12 @@ public class MainController {
 
     @FXML
     void handleManageConfigs(ActionEvent event) {
-
         try {
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("config-manager.fxml"));
             javafx.scene.Parent root = fxmlLoader.load();
+            ConfigManagerController configController = fxmlLoader.getController();
+            configController.setAssignmentManager(this.manager);
+
             javafx.stage.Stage stage = new javafx.stage.Stage();
             stage.setTitle("Manage Configurations");
             stage.setScene(new javafx.scene.Scene(root));
@@ -74,16 +76,10 @@ public class MainController {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        manager.createConfiguration("Test Config", Path.of("/usr/bin/gcc"), "-o main", "./main", Path.of("out.txt"));
-
-        // Clear the current items and update the ComboBox with the new configuration list
         configComboBox.getItems().clear();
         for (Configuration conf : manager.getConfigurations()) {
             configComboBox.getItems().add(conf.getConfigName());
         }
-
-        System.out.println("Configuration list updated in the interface.");
     }
     @FXML
     void handleImportConfig(ActionEvent event) {

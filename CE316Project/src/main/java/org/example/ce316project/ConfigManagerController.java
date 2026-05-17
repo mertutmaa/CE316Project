@@ -6,6 +6,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 
 public class ConfigManagerController {
+    private AssignmentManager manager;
 
     @FXML
     private ListView<String> configListView;
@@ -46,14 +47,24 @@ public class ConfigManagerController {
     }
 
     @FXML
-    void handleSave(ActionEvent event) {
-        String name = nameField.getText();
-        String path = compilerPathField.getText();
-        System.out.println("saving config: " + name);
-    }
-
-    @FXML
     void handleDelete(ActionEvent event) {
         System.out.println("deleting config");
     }
+    public void setAssignmentManager(AssignmentManager manager) {
+        this.manager = manager;
+    }
+
+    @FXML
+    void handleSave(ActionEvent event) {
+        String name = nameField.getText();
+        String path = compilerPathField.getText();
+
+
+        if (manager != null && !name.isEmpty()) {
+            manager.createConfiguration(name, java.nio.file.Path.of(path), compilerArgsField.getText(), runCmdField.getText(), null);
+            System.out.println("Config saved to manager: " + name);
+        }
+    }
+
+
 }
