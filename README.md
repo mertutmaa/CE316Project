@@ -83,11 +83,14 @@ Go to **Configuration → Manage Configurations**
 
 **Example configurations:**
 
-| Language | Compiler Path    | Args             | Run Command       |
-| -------- | ---------------- | ---------------- | ----------------- |
-| Python   | _(empty)_        | _(empty)_        | `python hello.py` |
-| C        | `/usr/bin/gcc`   | `-o main main.c` | `./main`          |
-| Java     | `/usr/bin/javac` | `Main.java`      | `java Main`       |
+| Language | Compiler Path    | Args               | Run Command                 |
+| -------- | ---------------- | ------------------ | --------------------------- |
+| Python   | _(empty)_        | _(empty)_          | `python hello.py`           |
+| C        | `/usr/bin/gcc`   | `-o main main.c`   | `./main`                    |
+| Java     | `/usr/bin/javac` | `Main.java`        | `java Main`                 |
+| C++      | `/usr/bin/g++`   | `main.cpp -o main` | `./main`                    |
+| Haskell  | _(empty)_        | _(empty)_          | `runghc hello.hs`           |
+| Prolog   | _(empty)_        | _(empty)_          | `swipl -q -t halt hello.pl` |
 
 ### Step 2 — Create a Project
 
