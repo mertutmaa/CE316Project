@@ -46,6 +46,8 @@ public class MainController {
 
     @FXML
     private TableColumn<StudentSubmission, String> detailsCol;
+    @FXML
+    private ListView<String> projectListView;
 
     // ─────────────────────────────────────────────
     // Initialization
@@ -58,6 +60,15 @@ public class MainController {
 
         setupTableColumns();
         refreshConfigComboBox();
+
+        refreshProjectList();
+
+
+        projectListView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                handleProjectSelection(newValue);
+            }
+        });
     }
 
     /**
@@ -143,6 +154,7 @@ public class MainController {
                     "Project created: " + projectName);
             System.out.println("[Main] New project created: " + projectName);
         });
+        refreshProjectList();
     }
 
     /**
@@ -519,4 +531,49 @@ void handleExportConfig(ActionEvent event) {
         alert.setContentText(message);
         alert.showAndWait();
     }
+
+    // Manager'daki projeleri çekip sol alt listedeki isimleri yeniler
+    private void refreshProjectList() {
+        projectListView.getItems().clear();
+        if (manager != null && manager.getProjects() != null) {
+            for (Project proj : manager.getProjects()) {
+                projectListView.getItems().add(proj.getName());
+            }
+        }
+    }
+
+
+    private void handleProjectSelection(String projectName) {
+        Project selectedProject = null;
+        for (Project proj : manager.getProjects()) {
+            if (proj.getName().equals(projectName)) {
+                selectedProject = proj;
+                break;
+            }
+        }
+
+        if (selectedProject != null) {
+            System.out.println("[GUI] Loading project: " + selectedProject.getName());
+
+
+            if (selectedProject.getConfiguration() != null) {
+                configComboBox.getSelectionModel().select(selectedProject.getConfiguration().getConfigName());
+            }
+
+
+            if (selectedProject.getSubmissionZIPsDirectory() != null) {
+                directoryTextField.setText(selectedProject.getSubmissionZIPsDirectory().toString());
+            }
+
+
+            studentListView.getItems().clear();
+            if (selectedProject.getSubmissions() != null) {
+                for (StudentSubmission sub : selectedProject.getSubmissions()) {
+                    studentListView.getItems().add(sub.getStudentID());
+                }
+            }
+        }
+    }
+
+
 }

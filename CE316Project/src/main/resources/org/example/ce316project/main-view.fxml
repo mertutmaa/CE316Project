@@ -5,6 +5,7 @@
 <?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.control.SplitPane?>
 
 <?import javafx.geometry.Insets?>
 <BorderPane xmlns="http://javafx.com/javafx"
@@ -43,13 +44,25 @@
     <center>
         <SplitPane dividerPositions="0.25" prefHeight="660.0" prefWidth="1000.0" BorderPane.alignment="CENTER">
             <items>
-                <VBox prefHeight="660.0" prefWidth="250.0" spacing="5.0">
-                    <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                    </padding>
-                    <Label text="Student Submissions" style="-fx-font-weight: bold;"/>
-                    <ListView fx:id="studentListView" VBox.vgrow="ALWAYS" />
-                </VBox>
+                <SplitPane dividerPositions="0.5" orientation="VERTICAL" prefHeight="660.0" prefWidth="250.0">
+                    <items>
+                        <VBox spacing="5.0">
+                            <padding>
+                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                            </padding>
+                            <Label text="Student Submissions" style="-fx-font-weight: bold;"/>
+                            <ListView fx:id="studentListView" VBox.vgrow="ALWAYS" />
+                        </VBox>
+
+                        <VBox spacing="5.0">
+                            <padding>
+                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                            </padding>
+                            <Label text="Project Explorer" style="-fx-font-weight: bold;"/>
+                            <ListView fx:id="projectListView" VBox.vgrow="ALWAYS" />
+                        </VBox>
+                    </items>
+                </SplitPane>
 
                 <SplitPane dividerPositions="0.22" orientation="VERTICAL" prefHeight="660.0" prefWidth="750.0">
                     <items>
